@@ -1,0 +1,79 @@
+{
+    "spectral_info": {
+        "baud_rate": 32000000000.0,
+        "channel_powers_dBm": 13,
+        "frequency": 193500000000000.0,
+        "slot_width": 44000000000.0,
+        "modulation_format": 4,
+        "modulator": "lumentum",
+        "laser_phase_noise": 1000000.0,
+        "shaping_filter": [
+            "rrc",
+            0.15,
+            32
+        ]
+    },
+    "modulator_params": {
+        "vcm_bias": 5,
+        "vcm_phase": 1.5,
+        "v_diff_i": 0.53,
+        "v_diff_q": 0.745,
+        "v_diff_ph": -1.272,
+        "v_L": 1.5,
+        "v_R": 0.0,
+        "v_pi": 0.5,
+        "v_in_step": 0.01,
+        "er_lin": 27,
+        "insertion_loss": 1,
+        "v_off": 0,
+        "v_bias": false,
+        "v_pi_griffin": false,
+        "b": 0.001,
+        "c": 12,
+        "phase_offset": 0.0,
+        "er_i_lin": 27,
+        "er_q_lin": 32,
+        "bias_offset_i": 0.0,
+        "bias_offset_q": 0.0,
+        "bias_offset_phase": 0.0,
+        "noise_flag": true,
+        "std": 0.01,
+        "sim_duration": 1e-08,
+        "lpf_flag": false,
+        "SNRdB_InP": 27,
+        "SNRdB_LiNb": 40
+    },
+    "ssfm_params": {
+        "equation": "manakov",
+        "cut_indices": 1,
+        "poldeg": 14,
+        "nl_strategy": {
+            "start_step": "fwm",
+            "update_step": "cle",
+            "max_nl_phase_shift": "Inf",
+            "accuracy": 0.1
+        },
+        "propagation": "linear",
+        "simulation_bandwidth": {
+            "strategy": "inband",
+            "bws": null
+        },
+        "npol": 2,
+        "filepath": "./results",
+        "optionals": {
+            "verbose": false,
+            "flag__force_bwa": false,
+            "flag__force_prbs": true,
+            "flag__force_length_all_channels": false,
+            "flag__force_separated_predistortion": true,
+            "flag__ssf_debug_data": false,
+            "flag__ssf_step_randomization": false,
+            "flag__overwrite_propagation": true,
+            "flag__overwrite_receiver": true,
+            "flag__save_csv": true,
+            "flag__random_wdm_delay": true,
+            "driver_filter_flag": true,
+            "flag__allow_extrap_freq_dep_outside_bwsig": true
+        }
+    }
+}
