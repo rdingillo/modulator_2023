@@ -1,50 +1,60 @@
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import random
 import time
-import copy
 import seaborn as sns; sns.set_theme()
-from colorama import Fore
 from pathlib import Path
-from scipy import signal
 from mzm_model.core.elements_ssfm_clean import SSFMLightSource, Splitter, Waveguide, Combiner, InP_MZM
-from mzm_model.core.emulation_settings import h, frequency, q, eta_s, input_current, v_A, v_B, v_pi, v_cm, \
-    v_diff, v_in_limit, v_in_step, er, insertion_loss, phase_offset, v_off, v_bias, b, c, wavelength, gamma_1, gamma_2
-from mzm_model.core.math_utils import lin2db, lin2dbm, db2lin
+# from mzm_model.core.modulator_ssfm_params import h, frequency, q, v_pi, \
+#     v_diff, v_in_limit, v_in_step, er, insertion_loss, phase_offset, v_off, v_bias, b, c, wavelength, gamma_1, gamma_2,\
+#     v_pi_values
+from mzm_model.core.modulator_ssfm_params import h, frequency, q, v_pi,phase_offset, v_off, b, c, gamma_1, gamma_2,\
+    v_pi_values
+from mzm_model.core.math_utils import lin2db, lin2dbm, db2lin, dbm2lin
+import json
 
 start_time = time.time()
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 root = Path(__file__).parent.parent
 input_folder = root/'resources'
 folder_results = root/'mzm_model'/'results'
+json_out = folder_results/'json_params.json'
+json_source = root.parent/'optical-system-interface/resources/ssfm_test_configs/lumentum_modulator/spectral_information'
+
+json_file = json_source/'ssi_cut0_pump0.json'
+
+json_params = json.load(open(json_file, 'r'))
+
+with open(json_out, 'w') as outfile:
+    json.dump(json_params, outfile, indent=4)
+
+json_spectral = json_params['spectral_info']
 
 # retrieve optical input source
-source = SSFMLightSource(input_current)
+source = SSFMLightSource(json_spectral)
 
-# evaluate optical input power
-input_power = source.calculate_optical_input_power(source.current)
-source.input_power = input_power
-input_power_dbm = lin2dbm(input_power)
+# evaluate optical input power in dBm
+input_power_dbm = source.input_power  # dBm
+"""TODO: QUI APPLICARE IL PRE-SOA POWER"""
+input_power = dbm2lin(input_power_dbm)  # Watt
+source.out_field = source.calculate_optical_input_power(input_power_dbm)
+input_field = source.out_field
+
+# define TX amplitude parameter in time (for the field)
+k_tx = (np.sqrt(input_power) / (np.sqrt(2))) * (np.pi / (2 * v_pi))
 
 # evaluate electric fields in splitter
 splitter = Splitter(source.input_power, source.out_field)
 splitter_fields = splitter.calculate_arms_input_fields()
-A_field = splitter_fields[0]   # [mV/m]
-B_field = splitter_fields[1]   # [mV/m]
-splitter.A_in_field = A_field
-splitter.B_in_field = B_field
+# save p and q field for the 2 arms (I, Q)
+x_field = splitter_fields[0]  # [mV/m]
+y_field = splitter_fields[1]  # [mV/m]
+splitter.A_in_field = x_field
+splitter.B_in_field = y_field
 
-# evaluate electric fields in waveguides
-arm_a = Waveguide(A_field)
-arm_b = Waveguide(B_field)
-
-out_arm_A = arm_a.out_field_evaluation(arm_a.in_field, v_A, v_pi)
-out_arm_B = arm_b.out_field_evaluation(arm_b.in_field, v_B, v_pi)
-
-arm_a.out_field = out_arm_A
-arm_b.out_field = out_arm_B
+"""NB ARRIVATI A QUESTO PUNTO SIAMO AL PRIMO SPLITTER DOVE SI DIVIDONO I E Q"""
+""" QUI VANNO INSERITI I VALORI DEI PRE-SOA"""
 
 # combiner output field
 

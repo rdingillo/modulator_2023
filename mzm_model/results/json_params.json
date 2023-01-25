@@ -16,6 +16,8 @@
     "modulator_params": {
         "vcm_bias": 5,
         "vcm_phase": 1.5,
+        "current_in_pre_soa": 100.0,
+        "current_in_post_soa": 20.0,
         "v_diff_i": 0.53,
         "v_diff_q": 0.745,
         "v_diff_ph": -1.272,

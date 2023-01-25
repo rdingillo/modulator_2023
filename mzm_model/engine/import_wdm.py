@@ -12,9 +12,9 @@ import seaborn as sns; sns.set_theme()
 import json
 # import csv
 from pathlib import Path
-from mzm_model.core.elements_ssfm import SSFMLightSource, Splitter, Combiner, MZMSingleElectrode, GriffinMZM
-from mzm_model.core.modulator_ssfm_params import v_pi, insertion_loss, phase_offset, b, c,\
-    gamma_1, gamma_2, num_signals, std, sps, Ts, v_tx_param, noise_flag, norm_factor, er_i, er_q,\
+from mzm_model.core.elements_ssfm_clean import SSFMLightSource, Splitter, Combiner, MZMSingleElectrode, InP_MZM
+from mzm_model.core.modulator_ssfm_params import v_pi, phase_offset, b, c,\
+    gamma_1, gamma_2, num_signals, std, sps, Ts, v_tx_param, noise_flag, norm_factor,\
     bias_offset_i, bias_offset_q, plot_flag, classic_flag, npol
 from mzm_model.core.math_utils import dbm2lin
 from mzm_model.core.utils_ssfm import plot_constellation

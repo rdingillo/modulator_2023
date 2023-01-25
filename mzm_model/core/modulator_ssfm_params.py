@@ -104,6 +104,9 @@ c = json_modulator['c']    # Transmission Absorption parameter, between 20 (same
 
 phase_offset = json_modulator['phase_offset']
 
+current_in_pre_soa = json_modulator['current_in_pre_soa']
+current_in_post_soa = json_modulator['current_in_post_soa']
+
 # ER OF I AND Q MZMS
 # er_i = db2lin(json_modulator['er_i_lin'])
 # er_q = db2lin(json_modulator['er_q_lin'])
