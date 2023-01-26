@@ -37,6 +37,7 @@ with open(json_out, 'w') as outfile:
 
 json_spectral = json_params['spectral_info']
 json_modulator = json_params['modulator_params']
+json_soa = json_params['soa_params']
 json_ssfm = json_params['ssfm_params']
 
 'Physical constants'
@@ -104,8 +105,8 @@ c = json_modulator['c']    # Transmission Absorption parameter, between 20 (same
 
 phase_offset = json_modulator['phase_offset']
 
-current_in_pre_soa = json_modulator['current_in_pre_soa']
-current_in_post_soa = json_modulator['current_in_post_soa']
+current_in_pre_soa = json_soa['current_in_pre_soa']
+current_in_post_soa = json_soa['current_in_post_soa']
 
 # ER OF I AND Q MZMS
 # er_i = db2lin(json_modulator['er_i_lin'])

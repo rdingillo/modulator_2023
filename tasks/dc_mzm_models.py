@@ -9,8 +9,10 @@ from mzm_model.core.elements_ssfm_clean import SSFMLightSource, Splitter, Wavegu
 #     v_diff, v_in_limit, v_in_step, er, insertion_loss, phase_offset, v_off, v_bias, b, c, wavelength, gamma_1, gamma_2,\
 #     v_pi_values
 from mzm_model.core.modulator_ssfm_params import h, frequency, q, v_pi,phase_offset, v_off, b, c, gamma_1, gamma_2,\
-    v_pi_values
+    v_pi_values, lambda_wave, vcm_phase, vcm_bias, v_diff_i, v_diff_q, v_diff_ph
 from mzm_model.core.math_utils import lin2db, lin2dbm, db2lin, dbm2lin
+from mzm_model.core.soa_config_singlechannel import pre_soa_out_power, post_soa_out_power
+from mzm_model.core.science_utils_ssfm import evaluate_field, griffin_phase_electrode, field_to_power_dbm
 import json
 
 start_time = time.time()
@@ -36,37 +38,76 @@ source = SSFMLightSource(json_spectral)
 
 # evaluate optical input power in dBm
 input_power_dbm = source.input_power  # dBm
-"""TODO: QUI APPLICARE IL PRE-SOA POWER"""
 input_power = dbm2lin(input_power_dbm)  # Watt
 source.out_field = source.calculate_optical_input_power(input_power_dbm)
 input_field = source.out_field
 
-# define TX amplitude parameter in time (for the field)
-k_tx = (np.sqrt(input_power) / (np.sqrt(2))) * (np.pi / (2 * v_pi))
+# # define TX amplitude parameter in time (for the field)
+# k_tx = (np.sqrt(input_power) / (np.sqrt(2))) * (np.pi / (2 * v_pi))
+#
+# # evaluate electric fields in splitter
+# splitter = Splitter(source.input_power, source.out_field)
+# splitter_fields = splitter.calculate_arms_input_fields()
+# # save p and q field for the 2 arms (I, Q)
+# x_field = splitter_fields[0]  # [mV/m]
+# y_field = splitter_fields[1]  # [mV/m]
+# splitter.A_in_field = x_field
+# splitter.B_in_field = y_field
 
-# evaluate electric fields in splitter
-splitter = Splitter(source.input_power, source.out_field)
-splitter_fields = splitter.calculate_arms_input_fields()
-# save p and q field for the 2 arms (I, Q)
-x_field = splitter_fields[0]  # [mV/m]
-y_field = splitter_fields[1]  # [mV/m]
-splitter.A_in_field = x_field
-splitter.B_in_field = y_field
-
-"""NB ARRIVATI A QUESTO PUNTO SIAMO AL PRIMO SPLITTER DOVE SI DIVIDONO I E Q"""
+"""NB ARRIVATI A QUESTO PUNTO SIAMO AL PRIMO SPLITTER DOVE SI DIVIDONO X E Y"""
 """ QUI VANNO INSERITI I VALORI DEI PRE-SOA"""
+pol_power_dbm = pre_soa_out_power()
+xi_power_dbm = pol_power_dbm - 3
+xq_power_dbm = xi_power_dbm
+
+xi_input_field = evaluate_field(xi_power_dbm)
+xq_input_field = evaluate_field(xq_power_dbm)
 
 # combiner output field
 
-combiner = Combiner(arm_a.out_field, arm_b.out_field)
-out_field_combiner = combiner.combiner_out_field(combiner.in_A, combiner.in_B)
-combiner.out_field = out_field_combiner
-# to check that combiner field is the same wrt eo_tf, try to take the abs**2 of combiner_out_field/sqrt()input_power)
-power_tf_check = (np.abs(combiner.out_field)/np.sqrt(input_power))**2
+# combiner = Combiner(arm_a.out_field, arm_b.out_field)
+# out_field_combiner = combiner.combiner_out_field(combiner.in_A, combiner.in_B)
+# combiner.out_field = out_field_combiner
+# # to check that combiner field is the same wrt eo_tf, try to take the abs**2 of combiner_out_field/sqrt()input_power)
+# power_tf_check = (np.abs(combiner.out_field)/np.sqrt(input_power))**2
 # create a list of Griffin MZMs using this input voltage interval
 # take into account the non-ideal params as b, c
 # for this evaluation, consider common mode voltage at 0
-griffin_mzm = InP_MZM(v_bias, v_A, v_B, gamma_1, gamma_2, phase_offset, b, c, er)
+
+# For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
+vpi_phase = np.mean([v_pi_values[2], v_pi_values[3]])
+mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff_i, gamma_1, gamma_2, phase_offset, b, c)
+mz_xq = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[2], v_diff_q, gamma_1, gamma_2, phase_offset, b, c)
+mz_phase = InP_MZM(lambda_wave, vcm_phase, vcm_bias, vpi_phase, v_diff_ph, gamma_1, gamma_2, phase_offset, b, c)
+
+# evaluate the electric fields of MZi at output
+mz_xi_field = mz_xi.griffin_eo_tf_field()*xi_input_field
+mz_xq_field = mz_xq.griffin_eo_tf_field()*xq_input_field
+
+mz_xi_power = field_to_power_dbm(mz_xi_field)
+mz_xq_power = field_to_power_dbm(mz_xq_field)
+
+# Apply the Phase Offset considering the vdiff_phase to be applied to the fields
+# At first evaluate the phases
+phases_shifts = griffin_phase_electrode(mz_phase.vl, mz_phase.vr, v_pi_values[3], v_pi_values[2])
+# Apply Phase Electrode phases independently to each XI and XQ arm
+mz_xi_ph_field = mz_xi_field * np.exp(phases_shifts[0] * 1j)
+mz_xq_ph_field = mz_xq_field * np.exp(phases_shifts[1] * 1j)
+
+mz_xi_ph_power = field_to_power_dbm(mz_xi_ph_field)     # [dBm]
+mz_xq_ph_power = field_to_power_dbm(mz_xq_ph_field)     # [dBm]
+"TODO: considera di trovare tramite software il valore da applicare al PHASE MODULATOR in modo " \
+"da ottenere una rotazione ideale"
+# combiner output field Griffin
+combiner_single_pol = Combiner(mz_xi_ph_field, mz_xq_ph_field)
+out_fields_combiner_single_pol = combiner_single_pol.combiner_out_field(combiner_single_pol.in_A,
+                                                                        combiner_single_pol.in_B)
+out_power_single_pol_pre_post_soa = field_to_power_dbm(out_fields_combiner_single_pol)      # [dBm]
+"TODO: QUI VA APPLICATA LA POTENZA DEL POST SOA"
+"FARE ATTENZIONE ALLE LOSS DEL POST SOA, FORSE VA TOLTA QUELLA DI QUAD LOSS PERCHE' GIA' IL COMBINER DA' LOSS"
+pout_post_soa = post_soa_out_power(out_power_single_pol_pre_post_soa)
+
+
 # evaluate Griffin V_bias to have the same V_pi of the classic MZM
 'Set a constant v_bias to get the same v_pi of the classic mzm, otherwise leave the variable one'
 v_bias = np.pi / v_pi

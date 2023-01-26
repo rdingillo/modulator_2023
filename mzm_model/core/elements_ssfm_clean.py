@@ -210,10 +210,14 @@ class InP_MZM(object):
         self._gamma_2 = gamma_2
         self._b = b
         self._c = c
-        self._phase_vl = 0
-        self._phase_vr = 0
-        self._transmission_vl = 0
-        self._transmission_vr = 0
+        self._vl = vcm_phase - vdiff/2
+        self._vr = vcm_phase + vdiff/2
+        self._intensities = self.griffin_intensity_tf()
+        self._phases = self.griffin_phase()
+        self._phase_vl = self._phases[0]
+        self._phase_vr = self._phases[1]
+        self._transmission_vl = self._intensities[0]
+        self._transmission_vr = self._intensities[1]
 
     @property
     def lambda_mzm(self):
@@ -230,6 +234,14 @@ class InP_MZM(object):
     @property
     def vdiff(self):
         return self._vdiff
+
+    @property
+    def vl(self):
+        return self._vl
+
+    @property
+    def vr(self):
+        return self._vr
 
     @property
     def vpi(self):
@@ -258,6 +270,14 @@ class InP_MZM(object):
     @property
     def phase_vl(self):
         return self._phase_vl
+
+    # @vl.setter
+    # def vl(self, vl):
+    #     self._vl = vl
+    #
+    # @vr.setter
+    # def vr(self, vr):
+    #     self._vr = vr
 
     @phase_vl.setter
     def phase_vl(self, phase_vl):
@@ -298,10 +318,10 @@ class InP_MZM(object):
     # define V-dependent intensity tf
     def griffin_intensity_tf(self):
         c = self.c
-        vl = self.eval_varm()[0]
-        vr = self.eval_varm()[1]
-        tf_l = (1 + np.exp((vl - c) / 0.8)) ** -1.25
-        tf_r = (1 + np.exp((vr - c) / 0.8)) ** -1.25
+        # vl = self.eval_varm()[0]
+        # vr = self.eval_varm()[1]
+        tf_l = (1 + np.exp((self.vl - c) / 0.8)) ** -1.25
+        tf_r = (1 + np.exp((self.vr - c) / 0.8)) ** -1.25
 
         return [tf_l, tf_r]
 
@@ -309,10 +329,10 @@ class InP_MZM(object):
         b = self.b
         v_pi = self.vpi
         vcm_phase = self.vcm_phase
-        vl = self.eval_varm()[0]
-        vr = self.eval_varm()[1]
-        phase_l = ((2 * b * vcm_phase * v_pi - np.pi) / v_pi) * vl - b * vl ** 2
-        phase_r = ((2 * b * vcm_phase * v_pi - np.pi) / v_pi) * vr - b * vl ** 2
+        # vl = self.eval_varm()[0]
+        # vr = self.eval_varm()[1]
+        phase_l = ((2 * b * vcm_phase * v_pi - np.pi) / v_pi) * self.vl - b * self.vl ** 2
+        phase_r = ((2 * b * vcm_phase * v_pi - np.pi) / v_pi) * self.vr - b * self.vr ** 2
 
         return [phase_l, phase_r]
 
@@ -320,24 +340,29 @@ class InP_MZM(object):
         gamma_1 = self.gamma_1
         gamma_2 = self.gamma_2
         phase_offset = self.phase_offset
-        vl = self.eval_varm()[0]
-        vr = self.eval_varm()[1]
-        transmission_vl = self.griffin_intensity_tf()[0]
-        transmission_vr = self.griffin_intensity_tf()[1]
-        phase_vl = self.griffin_phase()[0]
-        phase_vr = self.griffin_phase()[1]
-        self.transmission_vl = transmission_vl
-        self.transmission_vr = transmission_vr
-        self.phase_vl = phase_vl
-        self.phase_vr = phase_vr
+        # vl = self.vl
+        # vr = self.vr
+        # transmission_vl = self.griffin_intensity_tf()[0]
+        # transmission_vr = self.griffin_intensity_tf()[1]
+        # phase_vl = self.griffin_phase()[0]
+        # phase_vr = self.griffin_phase()[1]
+        # self.transmission_vl = transmission_vl
+        # self.transmission_vr = transmission_vr
+        # self.phase_vl = phase_vl
+        # self.phase_vr = phase_vr
         # ext_r = self.er
 
         # eo_tf_field = np.sqrt(1 - 1 / ext_r) * gamma_1 * gamma_2 * np.sqrt(transmission_vl) * np.exp(phase_vl * 1j) +
         #     np.sqrt(1 - 1 / ext_r) * np.sqrt(np.abs(1 - gamma_1 ** 2) * np.abs(1 - gamma_2 ** 2)) * np.sqrt(
         #     transmission_vr) * np.exp((phase_vr + phase_offset) * 1j)
+        transmission_vl = self.transmission_vl
+        transmission_vr = self.transmission_vr
+        phase_vl = self.phase_vl
+        phase_vr = self.phase_vr
+
         eo_tf_field = gamma_1 * gamma_2 * np.sqrt(transmission_vl) * np.exp(phase_vl * 1j) + \
                       np.sqrt(np.abs(1 - gamma_1 ** 2) * np.abs(1 - gamma_2 ** 2)) * np.sqrt(transmission_vr) * \
-                      np.exp((phase_vr + phase_offset) * 1j)
+                      np.exp(phase_vr * 1j)
         eo_field_conj = np.conjugate(eo_tf_field)
         eo_tf_power = eo_tf_field * eo_field_conj
         return eo_tf_power
@@ -346,24 +371,29 @@ class InP_MZM(object):
         gamma_1 = self.gamma_1
         gamma_2 = self.gamma_2
         phase_offset = self.phase_offset
-        vl = self.eval_varm()[0]
-        vr = self.eval_varm()[1]
-        transmission_vl = self.griffin_intensity_tf()[0]
-        transmission_vr = self.griffin_intensity_tf()[1]
-        phase_vl = self.griffin_phase()[0]
-        phase_vr = self.griffin_phase()[1]
-        self.transmission_vl = transmission_vl
-        self.transmission_vr = transmission_vr
-        self.phase_vl = phase_vl
-        self.phase_vr = phase_vr
+        # vl = self.vl
+        # vr = self.vr
+        # transmission_vl = self.griffin_intensity_tf()[0]
+        # transmission_vr = self.griffin_intensity_tf()[1]
+        # phase_vl = self.griffin_phase()[0]
+        # phase_vr = self.griffin_phase()[1]
+        # self.transmission_vl = transmission_vl
+        # self.transmission_vr = transmission_vr
+        # self.phase_vl = phase_vl
+        # self.phase_vr = phase_vr
         # ext_r = self.er
 
         # eo_tf_field = np.sqrt(1 - 1 / ext_r) * gamma_1 * gamma_2 * np.sqrt(transmission_vl) * np.exp(phase_vl * 1j) +
         #     np.sqrt(1 - 1 / ext_r) * np.sqrt(np.abs(1 - gamma_1 ** 2) * np.abs(1 - gamma_2 ** 2)) * np.sqrt(
         #     transmission_vr) * np.exp((phase_vr + phase_offset) * 1j)
+
+        transmission_vl = self.transmission_vl
+        transmission_vr = self.transmission_vr
+        phase_vl = self.phase_vl
+        phase_vr = self.phase_vr
         eo_tf_field = gamma_1 * gamma_2 * np.sqrt(transmission_vl) * np.exp(phase_vl * 1j) + \
                       np.sqrt(np.abs(1 - gamma_1 ** 2) * np.abs(1 - gamma_2 ** 2)) * np.sqrt(transmission_vr) * \
-                      np.exp((phase_vr + phase_offset) * 1j)
+                      np.exp(phase_vr * 1j)
         return eo_tf_field
 
     # def griffin_il_er(self):

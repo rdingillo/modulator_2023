@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns; sns.set_theme()
 
 from scipy.stats import gaussian_kde
-from mzm_model.core.modulator_ssfm_params import v_pi, er, insertion_loss, phase_offset, v_off, b, c, v_cm, \
+from mzm_model.core.modulator_ssfm_params import v_pi, er, insertion_loss, phase_offset, v_off, b, c, vcm_phase, \
     modulation_format
 from mzm_model.core.math_utils import lin2db
 

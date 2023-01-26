@@ -3,7 +3,7 @@ import pandas as pd
 import json
 from pathlib import Path
 from mzm_model.core.elements_ssfm_clean import SSFMLightSource
-from mzm_model.core.modulator_ssfm_params import json_spectral, frequency, current_in_pre_soa, current_in_post_soa
+from mzm_model.core.modulator_ssfm_params import json_spectral, json_soa, frequency, current_in_pre_soa, current_in_post_soa
 root = Path('~/PycharmProjects/modulator_2023/').expanduser()
 json_source = root.parent / 'optical-system-interface/resources/ssfm_test_configs/lumentum_modulator/spectral_information'
 
@@ -30,12 +30,12 @@ laser_input_power_dbm = source.input_power
 power_in = laser_input_power_dbm  # dBm, typically 13 dBm
 
 # mod_loss_set = np.arange(6, 15)                          # dB
-pbo_loss = 10  # dB, previously called modulation loss
-quad_loss = 3  # dB, quadrature loss
-loss_coupling = 3  # dB, loss of coupler
-loss_split_xy = 3  # dB, loss of polarization splitter
-loss_wg_pre_soa = 1  # dB, loss of waveguide BEFORE pre-SOA
-loss_wg_post_soa = 3  # dB, loss of waveguide BEFORE post-SOA
+pbo_loss = json_soa["pbo_loss"]  # dB, previously called modulation loss
+quad_loss = json_soa["quad_loss"]  # dB, quadrature loss
+loss_coupling = json_soa["loss_coupling"]  # dB, loss of coupler
+loss_split_xy = json_soa["loss_split_xy"]  # dB, loss of polarization splitter
+loss_wg_pre_soa = json_soa["loss_wg_pre_soa"]  # dB, loss of waveguide BEFORE pre-SOA
+loss_wg_post_soa = json_soa["loss_wg_post_soa"]  # dB, loss of waveguide BEFORE post-SOA
 # loss_wvl_dep_wg_data_post_soa = np.array(
 #     [1.7, 1.3, 1.2, 1.4, 1.9, 2.8])  # wavelength dependent losses in wg after post soa
 
@@ -112,6 +112,10 @@ beta_pre_soa = evaluate_beta(p1db_pre_soa, gs_pre_soa)
 
 p_out_pre_soa = evaluate_output_power(power_in_pre_soa, gs_pre_soa, beta_pre_soa)
 
+
+def pre_soa_out_power():
+    return p_out_pre_soa
+
 gs_post_soa = evaluate_gs(a0, a1, a2, current_in_post_soa)
 p1db_post_soa = evaluate_p1db_post(b0, b1, b2, current_in_post_soa)
 beta_post_soa = evaluate_beta(p1db_post_soa, gs_post_soa)
@@ -121,3 +125,9 @@ power_in_post_soa = p_out_pre_soa - post_soa_loss
 p_out_post_soa = evaluate_output_power(power_in_post_soa, gs_post_soa, beta_post_soa)
 osnr_db = evaluate_osnr_db(power_in_post_soa, channel)
 print()
+
+
+def post_soa_out_power(p_in_dbm):
+    power_in = p_in_dbm - post_soa_loss
+    power_out = evaluate_output_power(power_in, gs_post_soa, beta_post_soa)
+    return power_out

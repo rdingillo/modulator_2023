@@ -4,8 +4,9 @@ import random
 from numpy import sum,isrealobj,sqrt
 from numpy.random import standard_normal
 import pandas as pd
+from mzm_model.core.math_utils import lin2dbm, dbm2lin
 
-from mzm_model.core.modulator_ssfm_params import M, L
+from mzm_model.core.modulator_ssfm_params import M, L, phi_laser, b, vcm_phase
 
 '''Modulation format methods'''
 
@@ -100,3 +101,21 @@ def awgn(s,SNRdB,L=1):
         n = sqrt(N0/2)*(standard_normal(s.shape)+1j*standard_normal(s.shape))
     r = s + n # received signal
     return r
+
+
+def evaluate_field(power):
+    out_field = np.sqrt(dbm2lin(power)) * np.exp(phi_laser * -2j)
+    return out_field
+
+
+def griffin_phase_electrode(vl, vr, vpi_l, vpi_r):
+    phase_l = ((2 * b * vcm_phase * vpi_l - np.pi) / vpi_l) * vl - b * vl ** 2
+    phase_r = ((2 * b * vcm_phase * vpi_r - np.pi) / vpi_r) * vr - b * vr ** 2
+    return [phase_l, phase_r]
+
+
+def field_to_power_dbm(field):
+    eo_field_conj = np.conjugate(field)
+    eo_tf_power = lin2dbm(field * eo_field_conj)
+    return eo_tf_power
+
