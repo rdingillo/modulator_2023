@@ -44,8 +44,8 @@
         "SNRdB_LiNb": 40
     },
     "soa_params": {
-        "current_in_pre_soa": 100.0,
-        "current_in_post_soa": 100.0,
+        "current_in_pre_soa": 25.0,
+        "current_in_post_soa": 25.0,
         "pbo_loss": 10,
         "quad_loss": 3,
         "loss_coupling": 3,

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import seaborn as sns; sns.set_theme()
 from pathlib import Path
+from math import radians, degrees
 from mzm_model.core.elements_ssfm_clean import SSFMLightSource, Splitter, Waveguide, Combiner, InP_MZM
 # from mzm_model.core.modulator_ssfm_params import h, frequency, q, v_pi, \
 #     v_diff, v_in_limit, v_in_step, er, insertion_loss, phase_offset, v_off, v_bias, b, c, wavelength, gamma_1, gamma_2,\
@@ -97,7 +98,7 @@ mz_xq_ph_field = mz_xq_field * np.exp(phases_shifts[1] * 1j)
 mz_xi_ph_power = field_to_power_dbm(mz_xi_ph_field)     # [dBm]
 mz_xq_ph_power = field_to_power_dbm(mz_xq_ph_field)     # [dBm]
 "TODO: considera di trovare tramite software il valore da applicare al PHASE MODULATOR in modo " \
-"da ottenere una rotazione ideale"
+"da ottenere una rotazione ideale pari a pi/2"
 # combiner output field Griffin
 combiner_single_pol = Combiner(mz_xi_ph_field, mz_xq_ph_field)
 out_fields_combiner_single_pol = combiner_single_pol.combiner_out_field(combiner_single_pol.in_A,
@@ -107,6 +108,20 @@ out_power_single_pol_pre_post_soa = field_to_power_dbm(out_fields_combiner_singl
 "FARE ATTENZIONE ALLE LOSS DEL POST SOA, FORSE VA TOLTA QUELLA DI QUAD LOSS PERCHE' GIA' IL COMBINER DA' LOSS"
 pout_post_soa = post_soa_out_power(out_power_single_pol_pre_post_soa)
 
+# HERE A CORRECT EVALUATION OF EXTINCTION RATIO AND INSERTION LOSS IS PERFORMED SWEEPING ON ALL DIFFERENT POSSIBLE TPEs
+vdiff_array = np.arange(-2.5, 2.52, 0.01)
+
+il_list = []
+er_list = []
+for i in range(4):
+    mz_list = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[i], v_diff, gamma_1, gamma_2, phase_offset, b, c) for v_diff in vdiff_array]
+    mz_pow_list = np.array([dbm2lin(field_to_power_dbm(mzm.griffin_eo_tf_field())) for mzm in mz_list])
+    max_pow = max(mz_pow_list)
+    min_pow = min(mz_pow_list)
+    insertion_loss = - lin2db(max_pow)
+    er = lin2db(max_pow/min_pow)
+    il_list.append(insertion_loss)
+    er_list.append(er)
 
 # evaluate Griffin V_bias to have the same V_pi of the classic MZM
 'Set a constant v_bias to get the same v_pi of the classic mzm, otherwise leave the variable one'

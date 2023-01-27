@@ -116,6 +116,6 @@ def griffin_phase_electrode(vl, vr, vpi_l, vpi_r):
 
 def field_to_power_dbm(field):
     eo_field_conj = np.conjugate(field)
-    eo_tf_power = lin2dbm(field * eo_field_conj)
+    eo_tf_power = lin2dbm(np.abs(field * eo_field_conj))
     return eo_tf_power
 
