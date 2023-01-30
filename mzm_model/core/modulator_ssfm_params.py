@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 from mzm_model.core.math_utils import db2lin
 
+plot_flag = 1
+
 
 # retrieve vpi
 def eval_vpi(lambda_label, vcm, csv):
@@ -24,7 +26,7 @@ def eval_vpi(lambda_label, vcm, csv):
 root = Path('~/PycharmProjects/modulator_2023/').expanduser()
 json_source = root.parent/'optical-system-interface/resources/ssfm_test_configs/lumentum_modulator/spectral_information'
 
-json_file = json_source/'ssi_cut0_pump0.json'
+json_file = json_source/'ssi_cut0_pump0_2023.json'
 json_params = json.load(open(json_file, 'r'))
 folder_results = root/'mzm_model'/'results'
 folder_resources = root/'mzm_model'/'resources'
@@ -118,7 +120,7 @@ bias_offset_phase = json_modulator['bias_offset_phase']
 # Noise params
 noise_flag = True
 std = 0.01     # std is the standard deviation of normal distribution, for AWGN (default value is 0.01)
-sim_duration = json_modulator['sim_duration']     # simulation duration
+# sim_duration = json_modulator['sim_duration']     # simulation duration
 # SNRdB_InP = json_modulator['SNRdB_InP']     # for AWGN channel of InP
 # SNRdB_LiNb = json_modulator['SNRdB_LiNb'] # for AWGN channel of LiNb
 

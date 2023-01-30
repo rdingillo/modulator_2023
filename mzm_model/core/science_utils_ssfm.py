@@ -108,9 +108,9 @@ def evaluate_field(power):
     return out_field
 
 
-def griffin_phase_electrode(vl, vr, vpi_l, vpi_r):
-    phase_l = ((2 * b * vcm_phase * vpi_l - np.pi) / vpi_l) * vl - b * vl ** 2
-    phase_r = ((2 * b * vcm_phase * vpi_r - np.pi) / vpi_r) * vr - b * vr ** 2
+def griffin_phase_electrode(vl, vr, vpi_l, vpi_r, b_ph):
+    phase_l = ((2 * b_ph * vcm_phase * vpi_l - np.pi) / vpi_l) * vl - b_ph * vl ** 2
+    phase_r = ((2 * b_ph * vcm_phase * vpi_r - np.pi) / vpi_r) * vr - b_ph * vr ** 2
     return [phase_l, phase_r]
 
 
