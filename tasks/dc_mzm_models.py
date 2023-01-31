@@ -41,18 +41,6 @@ input_power = dbm2lin(input_power_dbm)  # Watt
 source.out_field = source.calculate_optical_input_power(input_power_dbm)
 input_field = source.out_field
 
-# # define TX amplitude parameter in time (for the field)
-# k_tx = (np.sqrt(input_power) / (np.sqrt(2))) * (np.pi / (2 * v_pi))
-#
-# # evaluate electric fields in splitter
-# splitter = Splitter(source.input_power, source.out_field)
-# splitter_fields = splitter.calculate_arms_input_fields()
-# # save p and q field for the 2 arms (I, Q)
-# x_field = splitter_fields[0]  # [mV/m]
-# y_field = splitter_fields[1]  # [mV/m]
-# splitter.A_in_field = x_field
-# splitter.B_in_field = y_field
-
 """NB ARRIVATI A QUESTO PUNTO SIAMO AL PRIMO SPLITTER DOVE SI DIVIDONO X E Y"""
 """ QUI VANNO INSERITI I VALORI DEI PRE-SOA"""
 pol_power_dbm = pre_soa_out_power()
@@ -61,17 +49,6 @@ xq_power_dbm = xi_power_dbm
 
 xi_input_field = evaluate_field(xi_power_dbm)
 xq_input_field = evaluate_field(xq_power_dbm)
-
-# combiner output field
-
-# combiner = Combiner(arm_a.out_field, arm_b.out_field)
-# out_field_combiner = combiner.combiner_out_field(combiner.in_A, combiner.in_B)
-# combiner.out_field = out_field_combiner
-# # to check that combiner field is the same wrt eo_tf, try to take the abs**2 of combiner_out_field/sqrt()input_power)
-# power_tf_check = (np.abs(combiner.out_field)/np.sqrt(input_power))**2
-# create a list of Griffin MZMs using this input voltage interval
-# take into account the non-ideal params as b, c
-# for this evaluation, consider common mode voltage at 0
 
 # For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
 vpi_phase = np.mean([v_pi_values[2], v_pi_values[3]])

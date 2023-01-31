@@ -1,9 +1,9 @@
 {
     "spectral_info": {
-        "baud_rate": 32000000000.0,
+        "baud_rate": 128000000000.0,
         "channel_powers_dBm": 13,
         "frequency": 193500000000000.0,
-        "slot_width": 44000000000.0,
+        "slot_width": 128000000000.0,
         "modulation_format": 4,
         "modulator": "lumentum",
         "laser_phase_noise": 1000000.0,
