@@ -9,7 +9,8 @@ import json
 from pathlib import Path
 from mzm_model.core.elements_ssfm_clean import SSFMLightSource, InP_MZM
 from mzm_model.core.modulator_ssfm_params import v_pi_values, v_diff_i, v_diff_q, b, c, gamma_1, gamma_2, \
-    bias_offset_i, bias_offset_q, plot_flag, npol, vcm_bias, vcm_phase, lambda_wave, v_diff_ph
+    bias_offset_i, bias_offset_q, plot_flag, npol, vcm_bias, vcm_phase, lambda_wave, v_diff_ph, driver_gain_i, \
+    driver_gain_q
 from mzm_model.core.math_utils import dbm2lin
 # from mzm_model.core.utils_ssfm import plot_constellation
 from mzm_model.core.soa_config_singlechannel import pre_soa_out_power, post_soa_out_power
@@ -57,8 +58,10 @@ def bias_mzm():
 
     # For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
     vpi_phase = np.mean([v_pi_values[2], v_pi_values[3]])
-    mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff_i, gamma_1, gamma_2, b, c)
-    mz_xq = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[2], v_diff_q, gamma_1, gamma_2, b, c)
+    mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff_i, gamma_1, gamma_2, b, c, driver_gain_i,
+                    np.array([0]))
+    mz_xq = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[2], v_diff_q, gamma_1, gamma_2, b, c, driver_gain_q,
+                    np.array([0]))
 
     # evaluate the electric fields of MZi at output
     mz_xi_field = mz_xi.griffin_eo_tf_field() * xi_input_field
@@ -67,7 +70,7 @@ def bias_mzm():
     mz_xi_power = field_to_power_dbm(mz_xi_field)  # [dBm]
     mz_xq_power = field_to_power_dbm(mz_xq_field)  # [dBm]
 
-    return mz_xi, mz_xq, mz_xi_power, mz_xq_power
+    return float(mz_xi.vpi), float(mz_xq.vpi), mz_xi_power, mz_xq_power
 
 
 def inp_modulator(xi, xq, yi, yq):
@@ -85,3 +88,46 @@ def inp_modulator(xi, xq, yi, yq):
     # print("--- Elapsed Time in Python Module: %s seconds ---" % (time.time() - start_time))
     return 0
     # return {'xi': np.array(griffin_xi), 'xq': np.array(griffin_xq), 'yi': np.array(griffin_yi), 'yq': np.array(griffin_yq)}
+
+
+def update_modulator(rf_i, rf_q):
+    # retrieve optical input source
+    source = SSFMLightSource(json_spectral)
+
+    # evaluate optical input power in dBm
+    input_power_dbm = source.input_power  # dBm
+    input_power = dbm2lin(input_power_dbm)  # Watt
+    source.out_field = source.calculate_optical_input_power(input_power_dbm)
+    input_field = source.out_field
+
+    """NB ARRIVATI A QUESTO PUNTO SIAMO AL PRIMO SPLITTER DOVE SI DIVIDONO X E Y"""
+    """ QUI VANNO INSERITI I VALORI DEI PRE-SOA"""
+    pol_power_dbm = pre_soa_out_power()
+    xi_power_dbm = pol_power_dbm - 3
+    xq_power_dbm = xi_power_dbm
+
+    xi_input_field = evaluate_field(xi_power_dbm)
+    xq_input_field = evaluate_field(xq_power_dbm)
+
+    # For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
+    vpi_phase = np.mean([v_pi_values[2], v_pi_values[3]])
+    mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff_i, gamma_1, gamma_2, b, c, driver_gain_i,
+                    np.array([rf_i]))
+    mz_xq = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[2], v_diff_q, gamma_1, gamma_2, b, c, driver_gain_q,
+                    np.array([rf_q]))
+
+    # evaluate the electric fields of MZi at output
+    mz_xi_field = mz_xi.griffin_eo_tf_field() * xi_input_field
+    mz_xq_field = mz_xq.griffin_eo_tf_field() * xq_input_field
+
+    mz_xi_power = field_to_power_dbm(mz_xi_field)  # [dBm]
+    mz_xq_power = field_to_power_dbm(mz_xq_field)  # [dBm]
+
+    return mz_xi, mz_xq, mz_xi_power, mz_xq_power
+
+# import random
+# prova_arr1 = [round(random.uniform(-v_pi_values[3], v_pi_values[3]), 2)for i in range(0, 2048)]
+# prova_arr2 = [round(random.uniform(-v_pi_values[3], v_pi_values[3]), 2)for i in range(0, 2048)]
+#
+# rf_mz = update_modulator(prova_arr1, prova_arr2)
+# print()

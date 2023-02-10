@@ -106,7 +106,11 @@ b = json_modulator['b']    # Phase Non-linearity parameter, between 0.0 (linear)
 c = json_modulator['c']    # Transmission Absorption parameter, between 20 (same LiNbO3 behavior)and 4.3
 
 phase_offset = json_modulator['phase_offset']
+'''DRIVER PARAMS'''
+driver_gain_i = json_modulator['driver_gain_i']
+driver_gain_q = json_modulator['driver_gain_q']
 
+'''SOA PARAMS'''
 current_in_pre_soa = json_soa['current_in_pre_soa']
 current_in_post_soa = json_soa['current_in_post_soa']
 

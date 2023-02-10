@@ -195,7 +195,7 @@ class MZMSingleElectrode(object):
 
 
 class InP_MZM(object):
-    def __init__(self, lambda_mzm, vcm_phase, vcm_bias, vpi, vdiff, gamma_1, gamma_2, b, c):
+    def __init__(self, lambda_mzm, vcm_phase, vcm_bias, vpi, vdiff, gamma_1, gamma_2, b, c, driver_gain, rf):
         # lambda in use
         self._lambda_mzm = lambda_mzm
         # vcm phase
@@ -209,16 +209,16 @@ class InP_MZM(object):
         self._gamma_2 = gamma_2
         self._b = b
         self._c = c
-        self._vl = vcm_phase - vdiff/2
-        self._vr = vcm_phase + vdiff/2
+        self._vl = np.array([vcm_phase - vdiff/2 - driver_gain*rf_i/2 for rf_i in rf])
+        self._vr = np.array([vcm_phase + vdiff/2 + driver_gain*rf_i/2 for rf_i in rf])
         self._intensities = self.griffin_intensity_tf()
         self._phases = self.griffin_phase()
         self._phase_vl = self._phases[0]
         self._phase_vr = self._phases[1]
         self._transmission_vl = self._intensities[0]
         self._transmission_vr = self._intensities[1]
-        self._rf_i = 0
-        self._rf_q = 0
+        self._rf = np.array(rf)
+        self._driver_gain = driver_gain
 
     @property
     def lambda_mzm(self):
@@ -281,20 +281,20 @@ class InP_MZM(object):
         self._phase_vr = phase_vr
 
     @property
-    def rf_i(self):
-        return self._rf_i
+    def rf(self):
+        return self._rf
 
-    @rf_i.setter
-    def rf_i(self, rf_i):
-        self._rf_i = rf_i
+    @rf.setter
+    def rf(self, rf):
+        self._rf = rf
 
     @property
-    def rf_q(self):
-        return self._rf_q
+    def driver_gain(self):
+        return self._driver_gain
 
-    @rf_q.setter
-    def rf_q(self, rf_q):
-        self._rf_q = rf_q
+    @driver_gain.setter
+    def driver_gain(self, driver_gain):
+        self._driver_gain = driver_gain
 
     @property
     def transmission_vl(self):
@@ -316,8 +316,9 @@ class InP_MZM(object):
     def eval_varm(self):
         vdiff = self.vdiff
         vph = self.vcm_phase
-        vl = vph - vdiff/2
-        vr = vph + vdiff/2
+        driv_gain = self.driver_gain
+        vl = self.vl
+        vr = self.vr
         return [vl, vr]
 
     # define V-dependent intensity tf

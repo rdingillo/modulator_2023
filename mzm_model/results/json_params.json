@@ -16,12 +16,14 @@
     "modulator_params": {
         "vcm_bias": 5,
         "vcm_phase": 1.5,
-        "v_diff_i": 0.53,
-        "v_diff_q": 0.745,
-        "v_diff_ph": -1.272,
+        "v_diff_i": 0.0,
+        "v_diff_q": 0.0,
+        "v_diff_ph": 0,
+        "driver_gain_i": 3,
+        "driver_gain_q": 3,
         "v_off": 0,
-        "b": 0.1,
-        "c": 4.3,
+        "b": 0.01,
+        "c": 11,
         "phase_offset": 0.0,
         "bias_offset_i": 0.0,
         "bias_offset_q": 0.0,
@@ -31,8 +33,8 @@
         "lpf_flag": false
     },
     "soa_params": {
-        "current_in_pre_soa": 25.0,
-        "current_in_post_soa": 25.0,
+        "current_in_pre_soa": 30.0,
+        "current_in_post_soa": 30.0,
         "pbo_loss": 10,
         "quad_loss": 3,
         "loss_coupling": 3,
@@ -55,7 +57,7 @@
             "strategy": "inband",
             "bws": null
         },
-        "npol": 1,
+        "npol": 2,
         "filepath": "./results",
         "optionals": {
             "verbose": false,

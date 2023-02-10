@@ -13,3 +13,7 @@
 /mzm_model/engine/__init__.py
 /mzm_model/engine/dac_generator.py
 /mzm_model/engine/import_wdm_w_soa.py
+/.idea/other.xml
+build/
+mzm_model_modulator23.egg-info/
+
