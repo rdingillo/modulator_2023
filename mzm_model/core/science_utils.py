@@ -72,9 +72,9 @@ def snr_estimation(evm):
 def ber_estimation(evm):
     # ber = (1 - (1/np.sqrt(M)))/(0.5*np.log2(M))*\
     #     scipy.special.erfc(np.sqrt(1.5/((M-1)*evm**2)))
-    ber = (2*(1 - 1/L)/np.log2(L))*\
+    ber_est = (2*(1 - 1/L)/np.log2(L))*\
           math.erfc(np.sqrt((((3*np.log2(L))/(L**(2)- 1)))*2/(evm**2 * np.log2(M))))
-    return ber
+    return ber_est
 
 # AWGN channel definition
 def awgn(s,SNRdB,L=1):

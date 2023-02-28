@@ -1,9 +1,9 @@
 {
     "spectral_info": {
-        "baud_rate": 128000000000.0,
+        "baud_rate": 150000000000.0,
         "channel_powers_dBm": 13,
         "frequency": 193500000000000.0,
-        "slot_width": 128000000000.0,
+        "slot_width": 150000000000.0,
         "modulation_format": 4,
         "modulator": "lumentum",
         "laser_phase_noise": 1000000.0,
@@ -14,16 +14,16 @@
         ]
     },
     "modulator_params": {
-        "vcm_bias": 5,
+        "vcm_bias": 7,
         "vcm_phase": 1.5,
-        "v_diff_i": 0.0,
-        "v_diff_q": 0.0,
-        "v_diff_ph": 0,
-        "driver_gain_i": 3,
-        "driver_gain_q": 3,
+        "v_diff_i": 0.53,
+        "v_diff_q": 0.735,
+        "v_diff_ph": -1.272,
+        "driver_gain_i": 0.01,
+        "driver_gain_q": 0.01,
         "v_off": 0,
         "b": 0.01,
-        "c": 11,
+        "c": 15,
         "phase_offset": 0.0,
         "bias_offset_i": 0.0,
         "bias_offset_q": 0.0,
@@ -33,8 +33,8 @@
         "lpf_flag": false
     },
     "soa_params": {
-        "current_in_pre_soa": 30.0,
-        "current_in_post_soa": 30.0,
+        "current_in_pre_soa": 100.0,
+        "current_in_post_soa": 100.0,
         "pbo_loss": 10,
         "quad_loss": 3,
         "loss_coupling": 3,
