@@ -37,3 +37,24 @@ def alfa2lin(alfa_db):
 # def dBm2lin(array):
 #     return db2lin(array) * 1e-3
 #
+def normalize(min_val, max_val, data):
+    """
+    Normalize data with respect to a minimum and maximum range
+    """
+
+    # minimum and maximum values of original data
+    min_data = min(data)
+    max_data = max(data)
+
+    # new range
+    new_min = min_val
+    new_max = max_val
+
+    # convert data to new range
+    norm_data = [((x - min_data) / (max_data - min_data)) * (new_max - new_min) + new_min for x in data]
+
+    # norm_data = []
+    # for val in data:
+    #     norm_val = (val - min_val) / (max_val - min_val)
+    #     norm_data.append(norm_val)
+    return np.array(norm_data)

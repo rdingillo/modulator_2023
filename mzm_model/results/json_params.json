@@ -1,6 +1,6 @@
 {
     "spectral_info": {
-        "baud_rate": 150000000000.0,
+        "baud_rate": 128000000000.0,
         "channel_powers_dBm": 13,
         "frequency": 193500000000000.0,
         "slot_width": 150000000000.0,

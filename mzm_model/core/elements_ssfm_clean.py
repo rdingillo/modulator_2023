@@ -366,3 +366,14 @@ class InP_MZM(object):
                       np.sqrt(np.abs(1 - gamma_1 ** 2) * np.abs(1 - gamma_2 ** 2)) * np.sqrt(transmission_vr) * \
                       np.exp(phase_vr * 1j)
         return eo_tf_field
+
+    def griffin_single_phase_analysis(self, b, v_pi, vcm, rf):
+        vdd_oc = 3.7        # V
+        # vsub = - (vcm + vdd_oc)
+        vsub = vcm
+        # v_arm = (vsub + 0.5 * rf[:, 0])
+        v_arm = (vsub)
+        param_1 = (2 * b * vsub * v_pi - np.pi) / v_pi
+        phase_single_arm = param_1 * v_arm - b * (v_arm ** 2)
+
+        return np.array(phase_single_arm), vsub

@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from matplotlib import use
 import matplotlib.pyplot as plt
 import time
@@ -8,8 +9,8 @@ from pathlib import Path
 from math import radians, degrees
 from mzm_model.core.elements_ssfm_clean import SSFMLightSource, Splitter, Waveguide, Combiner, InP_MZM
 from mzm_model.core.modulator_ssfm_params import h, frequency, q, v_pi,phase_offset, v_off, b, c, gamma_1, gamma_2,\
-    v_pi_values, lambda_wave, vcm_phase, vcm_bias, v_diff_i, v_diff_q, v_diff_ph, plot_flag
-from mzm_model.core.math_utils import lin2db, lin2dbm, db2lin, dbm2lin
+    v_pi_values, lambda_wave, vcm_phase, vcm_bias, v_diff_i, v_diff_q, v_diff_ph, plot_flag, eval_vpi, csv_vpi
+from mzm_model.core.math_utils import lin2db, lin2dbm, db2lin, dbm2lin, normalize
 from mzm_model.core.soa_config_singlechannel import pre_soa_out_power, post_soa_out_power
 from mzm_model.core.science_utils_ssfm import evaluate_field, griffin_phase_electrode, field_to_power_dbm
 import json
@@ -18,7 +19,7 @@ start_time = time.time()
 use('Qt5Agg')
 
 root = Path(__file__).parent.parent
-input_folder = root/'resources'
+input_folder = root/'mzm_model'/'resources'
 folder_results = root/'mzm_model'/'results'
 json_out = folder_results/'json_params.json'
 json_source = root.parent/'optical-system-interface/resources/ssfm_test_configs/lumentum_modulator/spectral_information'
@@ -31,7 +32,9 @@ with open(json_out, 'w') as outfile:
     json.dump(json_params, outfile, indent=4)
 
 json_spectral = json_params['spectral_info']
-
+json_mod_params = json_params['modulator_params']
+driver_gain_xi = json_mod_params['driver_gain_i']
+rf_i = pd.read_csv(input_folder / 'xi.csv', header=None).values
 # retrieve optical input source
 source = SSFMLightSource(json_spectral)
 
@@ -45,23 +48,47 @@ input_field = source.out_field
 """ QUI VANNO INSERITI I VALORI DEI PRE-SOA"""
 pol_power_dbm = pre_soa_out_power()
 xi_power_dbm = pol_power_dbm - 3
-xq_power_dbm = xi_power_dbm
 
 xi_input_field = evaluate_field(xi_power_dbm)
-xq_input_field = evaluate_field(xq_power_dbm)
 
-# For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
-vpi_phase = np.mean([v_pi_values[2], v_pi_values[3]])
-mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff_i, gamma_1, gamma_2, b, c, 0, np.zeros(1))
-mz_xq = InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[2], v_diff_q, gamma_1, gamma_2, b, c, 0, np.zeros(1))
-mz_phase = InP_MZM(lambda_wave, vcm_phase, vcm_bias, vpi_phase, v_diff_ph, gamma_1, gamma_2, b, c, 0, np.zeros(1))
 
+vcm_array = np.array([3, 5, 7, 9])
+b_array = np.arange(0.05, 0.21, 0.05)
+ph_list = []
+mz_xi = InP_MZM(lambda_wave, vcm_phase, vcm_bias, 1, 0, gamma_1, gamma_2, 0, 0, driver_gain_xi, rf_i)
+
+for b_i in b_array:
+    ph_array = []
+    vsub_array = []
+    for vcm in vcm_array:
+        vpi = eval_vpi(str(lambda_wave*1e9), vcm, csv_vpi)[3]
+        rf_i = normalize(-vpi, vpi, rf_i)
+        # plt.plot(rf_i)
+        # plt.show()
+        ratio = vcm / vpi
+        product = vcm * vpi
+        b_eval = product / (2 * np.pi) - 1
+        # For MZi values, consider that MZ1 = YQ (0), MZ2 = YI (1), MZ3 = XQ (2), MZ4 = XI (3)
+        phase_vsub = mz_xi.griffin_single_phase_analysis(b_i, vpi, vcm, rf_i)
+        # plt.plot(np.sort(phase_vsub[0]))
+        # plt.show()
+        phase = phase_vsub[0]
+        vsub = phase_vsub[1]
+
+        # plt.plot(phase)
+        # plt.show()
+        ph_mean = np.mean(phase)
+        ph_array.append(ph_mean)
+        vsub_array.append(vsub)
+    plt.plot(vcm_array, ph_array)
+    plt.show()
+    ph_list.append(ph_array)
+plt.plot(ph_list)
+plt.show()
 # evaluate the electric fields of MZi at output
 mz_xi_field = mz_xi.griffin_eo_tf_field()*xi_input_field
-mz_xq_field = mz_xq.griffin_eo_tf_field()*xq_input_field
 
 mz_xi_power = field_to_power_dbm(mz_xi_field)
-mz_xq_power = field_to_power_dbm(mz_xq_field)
 
 # Apply the Phase Offset considering the vdiff_phase to be applied to the fields
 # At first evaluate the phases
@@ -93,7 +120,7 @@ il_list = []
 er_list = []
 mz_pow_lists = []
 for i in range(4):
-    mz_list = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[i], v_diff, gamma_1, gamma_2, b, c, 0, np.zeros(1))
+    mz_list = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[i], v_diff, gamma_1, gamma_2, b, c)
                for v_diff in vdiff_array]
     mz_pow_list = np.array([dbm2lin(field_to_power_dbm(mzm.griffin_eo_tf_field())) for mzm in mz_list])
     max_pow = max(mz_pow_list)
@@ -119,14 +146,14 @@ b_phase_list = []
 c_transmission_list = []
 
 for b_new in b_list:
-    mz_list_b = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff, gamma_1, gamma_2, b_new, c_list[0], 0, np.zeros(1))
+    mz_list_b = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff, gamma_1, gamma_2, b_new, c_list[0])
                for v_diff in vdiff_array]
     mz_phase_list = np.array([mzm.phase_vr for mzm in mz_list_b])
     b_phase_list.append(mz_phase_list)
 b_phase_list = np.array(b_phase_list)
 
 for c_new in c_list:
-    mz_list_c = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff, gamma_1, gamma_2, b_list[0], c_new, 0, np.zeros(1))
+    mz_list_c = [InP_MZM(lambda_wave, vcm_phase, vcm_bias, v_pi_values[3], v_diff, gamma_1, gamma_2, b_list[0], c_new)
                for v_diff in vdiff_array]
     mz_transmission_list = np.array([mzm.transmission_vl for mzm in mz_list_c])
     c_transmission_list.append(mz_transmission_list)
